@@ -8,18 +8,17 @@ reg [15:0] A, B;
 reg [4:0] Op;
 reg Swap;
 wire [15:0] Q;
-wire Carry, Zero, Minus1;
+wire Carry, Zero, Sign;
 
-BitsliceALU DUT (A, B, Op, Swap, Q, Carry, Zero, Minus1);
+BitsliceALU DUT (A, B, Op, Q, Flags);
 
 task test_vector;
     input [4:0] testOp;
-    input testSwap;
     input [15:0] testA, testB;
     input [15:0] expectQ;
     input expectCarry, expectZero, expectMinus1;
     begin
-        $display($time, " Op = %h, Swap = %h, A = %h, B = %h", testOp, testSwap, testA, testB);
+        $display($time, "M=%b, S=%h, Cn=%b, A = %h, B = %h", testOp, testSwap, testA, testB);
         A = testA;
         B = testB;
         Op = testOp;

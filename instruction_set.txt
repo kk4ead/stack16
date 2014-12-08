@@ -1,0 +1,88 @@
+fetch:
+    if no irq or interrupts disabled:
+        ir <-- (pc++)
+        decode
+    else:
+        (++rsp) <-- pc
+        pc <-- [reset vector]
+        fetch
+
+load and store:
+
+[literal] - ( -- x )
+    (++dsp) <-- next
+    next <-- top
+    top <-- (pc++)
+    fetch
+
+@ - (addr -- x )
+    top <-- (top)
+    fetch
+
+// also allow a c! command
+! - (x addr -- )
+    (top) <-- next
+    top <-- (dsp--)
+    next <-- (dsp--)
+    fetch
+    
+c@ - ( addr -- char )
+    top <-- (top) & 0x00ff
+    fetch
+
+stack:
+
+drop - ( x -- )
+    top <-- next
+    next <-- (dsp--)
+    fetch
+
+dup - (x -- x x )
+    (++dsp) <-- next
+    next <-- top
+    fetch
+
+swap - ( x y -- y x )
+    (++dsp) <-- top
+    top <-- next
+    next <-- (dsp--)
+    fetch
+
+rot - ( x y z -- y z x )
+    (++rsp) <-- top
+    top <-- (dsp--)
+    (++dsp) <-- next            
+    next <-- (rsp--)
+    fetch
+
+flow control:
+
+0branch - (x -- )
+    if top==0:
+        top <-- next
+        next <-- (dsp--)
+        branch
+    else:
+        drop
+    
+branch - ( -- )
+    pc <-- (pc)
+    fetch
+
+execute - ( xt -- )
+    (++rsp) <-- pc
+    pc <-- top
+    // goto drop
+    top <-- next
+    next <-- (dsp--)
+    fetch
+
+exit - ( -- )
+    pc <-- (rsp--)
+    fetch
+
+// op = plus/minus/and/or/xor/equals
+Maths / Logic
+    top <-- top [op] next
+    next <-- (dsp--)
+    fetch

@@ -1,16 +1,37 @@
-module ControlFSM (clk, reset, read, write, irq, iack, ir, addr_sel, alu_oper, data_from_alu, alu_flags, top_clken, top_from_next, next_clken, next_from_top, ir_clken, pc_clken, pc_load, dsp_clken, dsp_up, rsp_clken, rsp_up);
+module ControlFSM (clk, reset, irq, read, write, iack, ir, alu_flags,
+    addr_sel, load_sel, count_sel, count_up, top_enable, alu_enable, alu_op);
 
-input clk, irq, reset;
-input [15:0] ir;
-input  [2:0] alu_flags; // { Carry, Zero, Minus1 }
+input clk, reset;
 
-output read, write, iack;
-output [1:0] addr_sel; // 0=PC, 1=DSP, 2=RSP, 3=ALU
-output [5:0] alu_oper;  // { M, S3..S0, Swap }
-output data_from_alu;
-output top_clken, top_from_next, next_clken, next_from_top;
-output ir_clken, pc_clken, pc_load, dsp_clken, dsp_up, rsp_clken, rsp_up;
+// 16-bit microcode address
+input irq;              // 1
+input [7:0] ir;         // 8
+input [2:0] alu_flags;  // 3
+reg   [3:0] ustate;     // 4
 
-reg pr_state, nx_state;
+// 22-bit microinstruction
+output read, write, iack;                   // 3
+output [1:0] addr_sel, load_sel, count_sel; // 6
+output count_up, top_enable, alu_enable;    // 3
+output [5:0] alu_op;                        // 6
+wire   [3:0] nx_ustate;                     // 4
+
+reg [21:0] ucode [0:65535];
+
+assign {read, write, iack, addr_sel, load_sel, count_sel, count_up, top_enable,
+        alu_enable, alu_op, nx_ustate} = ucode[ {ir, ustate, irq, alu_flags} ];
+
+initial begin
+    $readmemh("microcode.hex", ucode);
+end
+
+always @(posedge reset) begin
+    if (reset)
+        ustate <= 0;
+end
+
+always @(posedge clk) begin
+    ustate <= nx_ustate;
+end
 
 endmodule

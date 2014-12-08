@@ -1,65 +1,69 @@
 module Datapath (clk, reset, addr, data, read, write, irq, iack);
 
-input clk, irq, reset;
+input  clk, reset, irq;
+inout  [15:0] data;
 output [15:0] addr;
-inout [15:0] data;
-output read, write;
+output read, write, iack;
 
-reg [15:0] top, next, dsp, rsp, pc, ir;
-reg [7:0] dsp_low, rsp_low;
+reg  [15:0] top, next;
+reg  [15:0] pc, dsp, rsp;
+reg   [7:0] ir;
 
-wire [1:0] addr_sel;  // 0=PC, 1=DSP, 2=RSP, 3=ALU
-wire [5:0] alu_oper;  // { M, S3..S0, Swap }
-wire [2:0] alu_flags; // { Carry, Zero, Minus1 }
-wire [15:0] alu_A, alu_B, alu_Q;
+wire  [1:0] addr_sel, load_sel, count_sel;
+wire        top_enable, alu_enable, count_up;
+wire  [5:0] alu_op;
 
-BitsliceALU alu (alu_A, alu_B, alu_oper[5:1], alu_oper[0], alu_Q, alu_flags[2], alu_flags[1], alu_flags[0]);
+wire [15:0] alu_q;
+wire  [2:0] alu_flags;
 
-ControlFSM control (clk, reset, read, write, irq, iack, ir, addr_sel, alu_oper, data_from_alu, alu_flags, top_clken, top_from_next, next_clken, next_from_top, ir_clken, pc_clken, pc_load, dsp_clken, dsp_up, rsp_clken, rsp_up);
+ControlFSM control (clk, reset, irq, read, write, iack, ir, alu_flags,
+    addr_sel, load_sel, count_sel, count_up, top_enable, alu_enable, alu_op);
 
-// infer 16-bit tri-state buffer
-assign data = data_from_alu ? alu_Q : 16'bZZZZZZZZZZZZZZZZ;
+BitsliceALU alu (top, next, alu_op, alu_q, alu_flags);
 
-assign dsp = { 8'hff, dsp_low }; // data stack grows upward from 16'hff00
-assign rsp = { 8'hff, rsp_low }; // return stack grows downward from 16'hffff
+// infer two 16-bit tri-state buffers
+assign
+    data = (top_enable == 1) ? top : 16'bZ,
+    data = (alu_enable == 1) ? alu_q : 16'bZ;
 
 // infer 16-bit 4-way mux
-always begin
-    case (addr_sel)
-        0:
-            address = pc;
-        1:
-            address = dsp;
-        2:
-            address = rsp;
-        default:
-            address = alu_Q; // use top instead? faster, but less flexible
-    endcase
-end
+assign addr = (addr_sel == 0) ? top :
+              (addr_sel == 1) ? dsp :
+              (addr_sel == 2) ? rsp :
+              (addr_sel == 3) ? pc  :
+                                16'bX; 
 
-// asynchronous reset for all registers
-always @(reset) begin
+// implement asynchronous reset for all registers
+always @(posedge reset or posedge iack) begin
     if (reset) begin
-        top <= 0;
+        top  <= 0;
         next <= 0;
-        dsp_low <= 0;
-        rsp_low <= -1;
-        pc <= 0;
-        ir <= 0;
+        dsp  <= 16'h7e00;
+        rsp  <= 16'h7c00;
+        ir   <= 0;
+    end
+    if (reset | iack) begin
+        pc <= 16'h0000;
     end
 end
         
-// infer 2 16-bit 2-way muxes
+// infer 2 2-to-4 decoders
 // infer 3 16-bit registers with clock enable
 // infer 1 16-bit up counter with clock enable and synchronous load
-// infer 2  8-bit up-down counters with clock enable
+// infer 2 16-bit up-down counters with clock enable
 always @(posedge clk) begin
-    if (top_clken)  top  <= top_from_next ? next : data;
-    if (next_clken) next <= next_from_top ? top  : data;
-    if (ir_clken)   ir   <= data;
-    if (pc_clken)   pc   <= pc_load ? data : pc + 1;
-    if (dsp_clken)  dsp  <= dsp_up ? dsp + 1 : dsp - 1;
-    if (rsp_clken)  rsp  <= rsp_up ? rsp + 1 : rsp - 1;
+    case (load_sel)
+        0:       top  <= data;
+        1:       next <= data;
+        2:       ir   <= data[7:0];
+        3:       pc   <= data;
+    endcase
+
+    case (count_sel)
+        1: dsp <= count_up ? dsp + 1 : dsp - 1;
+        2: rsp <= count_up ? rsp + 1 : rsp - 1;
+        3: if (load_sel != 3) pc <= pc + 1;
+    endcase   
 end
 
 endmodule
