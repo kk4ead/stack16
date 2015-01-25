@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Stack16 : A simple 16-bit stack machine, designed to be implemented with only 7400-series devices.">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Stack16</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/kk4ead/stack16">View on GitHub</a>
+
+          <h1 id="project_title">Stack16</h1>
+          <h2 id="project_tagline">A simple 16-bit stack machine, designed to be implemented with only 7400-series devices.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/kk4ead/stack16/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/kk4ead/stack16/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a id="stack16" class="anchor" href="#stack16" aria-hidden="true"><span class="octicon octicon-link"></span></a>stack16</h1>
+
+<p>A simple 16-bit stack machine, designed to be implemented with only 7400-series devices.</p>
+
+<p>There are two 16-bit data registers named TOP and NEXT, and an 8-bit instruction register, implemented as flip-flops with clock enable inputs.</p>
+
+<p>A 16-bit program counter and 15-bit data and return stack pointers are implemented as up/down counters with clock enables. Their values are not directly accessible. On a processor reset (or, for the program counter, on an interrupt), they are loaded from DIP switches.</p>
+
+<p>Memory access is word-aligned. This is not especially efficient, unless I come up with a clever instruction set encoding that makes procedure calls and integer literals take only one word.</p>
+
+<p>During every microinstruction cycle:</p>
+
+<ul>
+<li>The address bus is driven by either the TOP register, the program counter, the data stack pointer, or the return stack pointer. </li>
+<li>The data bus is driven by either the program counter, the result of an ALU operation on the TOP and the NEXT registers, or memory. </li>
+<li>Memory may be written to if it is not being read from.</li>
+<li>The TOP register, the NEXT register, the program counter, or the instruction register may be loaded from the data bus.</li>
+<li>One counter may be incremented or decremented.</li>
+<li>The next microstate is loaded into a 4-bit register from microprogram memory.</li>
+</ul>
+
+<p>A 64K word x 24 bit EEPROM stores the microprogram.</p>
+
+<ul>
+<li>4 of the address bits are driven by the present microstate (limiting the length of any instruction to a maximum of 16 cycles).</li>
+<li>8 are driven by the instruction register.</li>
+<li>3 are driven by the "flag" outputs of the ALU (sign, zero, and carry).</li>
+<li>1 is driven by the IRQ pin.
+This is not especially efficient, but it minimizes chip count.</li>
+</ul>
+
+<p>The simulation requires Mark C. Hansen's Verilog behavioral model of the 74181 4-bit ALU, available [here] <a href="http://web.eecs.umich.edu/%7Ejhayes/iscas.restore/">http://web.eecs.umich.edu/~jhayes/iscas.restore/</a> for research use. If you have curl installed, 'make deps' will automatically download it.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Stack16 maintained by <a href="https://github.com/kk4ead">kk4ead</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-48102494-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+
+  </body>
+</html>
