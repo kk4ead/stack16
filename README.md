@@ -24,4 +24,4 @@ A 64K word x 24 bit EEPROM stores the microprogram.
  * 1 is driven by the IRQ pin.
 This is not especially efficient, but it minimizes chip count.
 
-The simulation requires Mark C. Hansen's Verilog behavioral model of the 74181 4-bit ALU, available [here] <http://web.eecs.umich.edu/~jhayes/iscas.restore/> for research use. If you have curl installed, 'make deps' will automatically download it.
+The simulation requires Mark C. Hansen's Verilog behavioral model of the 74181 4-bit ALU, available [here](http://web.eecs.umich.edu/~jhayes/iscas.restore/) for research use. If you have curl installed, 'make deps' will automatically download it.
